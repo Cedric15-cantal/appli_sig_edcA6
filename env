@@ -1,5 +1,0 @@
-SECRET_KEY=choisissez-un-mot-secret-qui-servira-comme-clé-pour-le-hachage
-ORS_API_KEY=utilise-votre-jeton-de-l'API-OpenRouteServices-OU-vous-pouvez-utiliser-la-nôtre,-ce-n'est-pas-une-oubliée,-nous-l'avons-laissée-là-exprès.
-5b3ce3597851110001cf62484290a3c1538c4d0b90e0205193e11630
-
-##renommer le fichier en .env
