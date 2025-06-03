@@ -5,8 +5,8 @@
 - [Guide utilisateur](docs/guide-utilisateur.html) *(à créer)*
 
 ## 🛠️ Support technique via GitHub Issues
-- Accès direct aux [Issues](https://github.com/votre-org/votre-repo/issues)
-- Créer un [nouveau ticket](https://github.com/votre-org/votre-repo/issues/new/choose)
+- Accès direct aux [Issues](https://github.com/Cedric15-cantal/appli_sig_edcA6/issues)
+- Créer un [nouveau ticket](https://github.com/Cedric15-cantal/appli_sig_edcA6/issues/new/choose)
 
 ## 🧑‍💼 Rôle du géomaticien
 Le géomaticien LEG :
