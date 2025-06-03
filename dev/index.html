@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo CAMA</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.5.0/ol.css">
+    <style>
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .ol-zoom {
+            display: none;
+        }
+        
+        .ol-rotate {
+            display: none !important;
+        }
+        
+        .control-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .control-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+            background: #4a6ea9;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+        }
+        
+        .control-button:hover {
+            background: #3a5a8f;
+        }
+        
+        .search-container {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: 50%;
+            max-width: 500px;
+        }
+        
+        .search-bar {
+            width: 100%;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .compass {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        
+        .compass-arrow {
+            font-size: 20px;
+            color: #4a6ea9;
+            transition: transform 0.3s ease;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 5px;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        
+        .submit-btn {
+            background: #4a6ea9;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .submit-btn:hover {
+            background: #3a5a8f;
+        }
+        
+        .button-icon {
+            font-size: 18px;
+        }
+        
+        .suggestions-container {
+            position: absolute;
+            top: 45px;
+            left: 0;
+            right: 0;
+            z-index: 1001;
+            background: white;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .suggestion-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        .suggestion-address {
+            font-weight: bold;
+        }
+        
+        .suggestion-city {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .search-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .route-mode {
+            background-color: #f0f8ff;
+        }
+        
+        .route-instruction {
+            position: fixed;
+            bottom: -300px;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+            max-height: 300px;
+            overflow-y: auto;
+            transition: bottom 0.3s ease;
+            border-radius: 10px 10px 0 0;
+            width: 40%;
+            scrollbar-width: none;
+        }
+
+        .route-instruction.active {
+            bottom: 0;
+        }
+
+        .route-steps {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        .route-handle {
+            width: 50px;
+            height: 4px;
+            background: #ccc;
+            margin: 0 auto 10px;
+            border-radius: 2px;
+        }
+        
+        .route-summary {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4a6ea9;
+        }
+        
+        .mode-selector {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .mode-btn {
+            background: #e0e0e0;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            padding: 0;
+        }
+
+        .mode-btn.active {
+            background: #4a6ea9;
+            color: white;
+        }
+
+        .mode-btn[data-mode="driving-car"]::before {
+            content: "🚗";
+        }
+        .mode-btn[data-mode="foot-walking"]::before {
+            content: "🚶";
+        }
+        .mode-btn[data-mode="cycling-regular"]::before {
+            content: "🚴";
+        }
+
+        .start-point-selector {
+            position: absolute;
+            top: 45px;
+            left: 0;
+            right: 0;
+            z-index: 1001;
+            background: white;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .start-point-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .start-point-option:hover {
+            background-color: #f5f5f5;
+        }
+
+        .start-point-option:last-child {
+            border-bottom: none;
+        }
+
+        .start-point-icon {
+            margin-right: 10px;
+            color: #4a6ea9;
+        }
+
+        .connected {
+            background-color: #4CAF50 !important;
+        }
+
+        .profile-modal {
+            display: none;
+            position: fixed;
+            z-index: 2001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .profile-modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 5px;
+        }
+
+        .profile-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .profile-buttons button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        #update-profile-btn {
+            background: #4a6ea9;
+            color: white;
+        }
+
+        #logout-btn {
+            background: #f44336;
+            color: white;
+        }
+
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="control-panel">
+        <button id="connect-btn" class="control-button" title="Connexion">
+            <i class="fas fa-user button-icon"></i>
+        </button>
+        <button id="change-tiles-btn" class="control-button" title="Changer le fond de carte">
+            <i class="fas fa-layer-group button-icon"></i>
+        </button>
+        <button id="geolocation-btn" class="control-button" title="Géolocalisation">
+            <i class="fas fa-location-arrow button-icon"></i>
+        </button>
+        <button id="itinerary-btn" class="control-button" title="Calculer un itinéraire">
+            <i class="fas fa-route button-icon"></i>
+        </button>
+        <button id="route-instruction-btn" class="control-button" title="Instructions d'itinéraire">
+            <i class="fas fa-directions button-icon"></i>
+        </button>
+    </div>
+    
+    <div class="search-container">
+        <div class="search-wrapper">
+            <input type="text" id="location-search" class="search-bar" placeholder="Rechercher une adresse...">
+            <div id="suggestions" class="suggestions-container"></div>
+            <div id="start-point-selector" class="start-point-selector">
+                <div class="start-point-option" id="current-position-option">
+                    <i class="fas fa-location-arrow start-point-icon"></i>
+                    Votre position actuelle
+                </div>
+                <div class="start-point-option" id="search-address-option">
+                    <i class="fas fa-search start-point-icon"></i>
+                    Rechercher une adresse
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="compass" id="compass">
+        <div class="compass-arrow">↑</div>
+    </div>
+    
+    <div class="route-instruction" id="route-instruction">
+        <div class="route-handle"></div>
+        <div class="route-summary" id="route-summary"></div>
+        <div class="route-steps" id="route-steps"></div>
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="driving-car" title="Voiture"></button>
+            <button class="mode-btn" data-mode="foot-walking" title="Marche"></button>
+            <button class="mode-btn" data-mode="cycling-regular" title="Vélo"></button>
+        </div>
+    </div>
+    
+    <div id="connection-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Connexion</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Nom d'utilisateur:</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Mot de passe:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="submit-btn">Connexion</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="signup-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Créer un compte</h2>
+            <form id="signup-form">
+                <div class="form-group">
+                    <label for="signup-username">Nom d'utilisateur:</label>
+                    <input type="text" id="signup-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">Email:</label>
+                    <input type="email" id="signup-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Mot de passe:</label>
+                    <input type="password" id="signup-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-confirm-password">Confirmer le mot de passe:</label>
+                    <input type="password" id="signup-confirm-password" required>
+                </div>
+                <button type="submit" class="submit-btn">Créer un compte</button>
+                <p style="text-align: center; margin-top: 15px;">
+                    Déjà un compte? <a href="#" id="show-login">Se connecter</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <div id="profile-modal" class="profile-modal">
+        <div class="profile-modal-content">
+            <span class="close">&times;</span>
+            <h2>Profil Utilisateur</h2>
+            <form id="profile-form">
+                <div class="form-group">
+                    <label for="profile-username">Nom d'utilisateur:</label>
+                    <input type="text" id="profile-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="profile-email">Email:</label>
+                    <input type="email" id="profile-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="profile-password">Nouveau mot de passe (laisser vide si inchangé):</label>
+                    <input type="password" id="profile-password">
+                </div>
+                <div class="form-group">
+                    <label for="profile-confirm-password">Confirmer le nouveau mot de passe:</label>
+                    <input type="password" id="profile-confirm-password">
+                </div>
+                <div class="profile-buttons">
+                    <button type="submit" id="update-profile-btn">Mettre à jour</button>
+                    <button type="button" id="logout-btn">Déconnexion</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ol@v10.5.0/dist/ol.js"></script>
+    <script>
+        // Configuration de l'API OpenRouteService avec la clé d'API
+        const ORS_API_KEY = '5b3ce3597851110001cf62484290a3c1538c4d0b90e0205193e11630';
+        const ORS_API_URL = 'https://api.openrouteservice.org/v2/directions';
+
+        // Initialisation de la carte avec OpenLayers (centre sur Paris par défaut)
+        const map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM() // Utilisation d'OpenStreetMap comme fond de carte par défaut
+                })
+            ],
+            view: new ol.View({
+                center: ol.proj.fromLonLat([2.3522, 48.8566]), // Coordonnées de Paris
+                zoom: 12,
+                enableRotation: true // Activation de la rotation de la carte
+            }),
+            controls: [] // Désactivation des contrôles par défaut
+        });
+
+        // Récupération des éléments DOM principaux
+        const connectBtn = document.getElementById('connect-btn');
+        const changeTilesBtn = document.getElementById('change-tiles-btn');
+        const geolocationBtn = document.getElementById('geolocation-btn');
+        const itineraryBtn = document.getElementById('itinerary-btn');
+        const routeInstructionBtn = document.getElementById('route-instruction-btn');
+        const locationSearch = document.getElementById('location-search');
+        const suggestionsContainer = document.getElementById('suggestions');
+        const startPointSelector = document.getElementById('start-point-selector');
+        const currentPositionOption = document.getElementById('current-position-option');
+        const searchAddressOption = document.getElementById('search-address-option');
+        const compassArrow = document.querySelector('.compass-arrow');
+        const compass = document.getElementById('compass');
+        const connectionModal = document.getElementById('connection-modal');
+        const closeModal = document.querySelector('.close');
+        const loginForm = document.getElementById('login-form');
+        const routeInstruction = document.getElementById('route-instruction');
+
+        // Variables globales pour la gestion de l'état de l'application
+        let routeLayer = null; // Couche pour afficher l'itinéraire
+        let startPoint = null; // Coordonnées du point de départ
+        let endPoint = null; // Coordonnées du point d'arrivée
+        let currentRouteMode = 'driving-car'; // Mode de transport par défaut (voiture)
+        let currentSuggestions = []; // Suggestions d'adresses actuelles
+        let isSelectingStartPoint = false; // Indique si l'utilisateur sélectionne un point de départ
+
+        // Définition des différents fonds de carte disponibles
+        const tileSources = [
+            { name: 'osm', source: new ol.source.OSM(), icon: 'map' }, // OpenStreetMap
+            { name: 'topo', source: new ol.source.XYZ({ url: 'https://{a-c}.tile.opentopomap.org/{z}/{x}/{y}.png' }), icon: 'mountain' }, // Carte topographique
+            { name: 'satellite', source: new ol.source.XYZ({ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' }), icon: 'satellite' }, // Satellite
+            { name: 'dark', source: new ol.source.XYZ({ url: 'https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png' }), icon: 'moon' } // Mode sombre
+        ];
+
+        let currentTileIndex = 0; // Index du fond de carte actuel
+
+        // Gestion de la modal de connexion
+        connectBtn.addEventListener('click', () => {
+            connectionModal.style.display = 'block';
+        });
+
+        // Fermeture de la modal
+        closeModal.addEventListener('click', () => {
+            connectionModal.style.display = 'none';
+        });
+
+        // Fermeture de la modal lors d'un clic en dehors
+        window.addEventListener('click', (event) => {
+            if (event.target === connectionModal) {
+                connectionModal.style.display = 'none';
+            }
+        });
+
+        // Soumission du formulaire de connexion
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            alert(`Tentative de connexion avec l'utilisateur: ${username}`);
+            connectionModal.style.display = 'none';
+        });
+
+        // Récupération des éléments DOM pour l'inscription
+        const signupModal = document.getElementById('signup-modal');
+        const showLoginLink = document.getElementById('show-login');
+        const signupForm = document.getElementById('signup-form');
+
+        // Modification du comportement du bouton de connexion pour gérer l'inscription
+        connectBtn.addEventListener('click', () => {
+            connectionModal.style.display = 'block';
+            // Ajout d'un lien "Créer un compte" dans la modal de connexion
+            const loginForm = document.getElementById('login-form');
+            if (!document.getElementById('show-signup')) {
+                const signupLink = document.createElement('p');
+                signupLink.id = 'show-signup';
+                signupLink.style.textAlign = 'center';
+                signupLink.style.marginTop = '15px';
+                signupLink.innerHTML = 'Pas de compte? <a href="#">Créer un compte</a>';
+                loginForm.appendChild(signupLink);
+                
+                signupLink.querySelector('a').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    connectionModal.style.display = 'none';
+                    signupModal.style.display = 'block';
+                });
+            }
+        });
+
+        // Gestion du basculement entre connexion et inscription
+        showLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            signupModal.style.display = 'none';
+            connectionModal.style.display = 'block';
+        });
+
+        // Soumission du formulaire d'inscription
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('signup-username').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm-password').value;
+            
+            if (password !== confirmPassword) {
+                alert('Les mots de passe ne correspondent pas');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username,
+                        email,
+                        password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('Compte créé avec succès! Vous pouvez maintenant vous connecter.');
+                    signupModal.style.display = 'none';
+                    connectionModal.style.display = 'block';
+                    signupForm.reset();
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la création du compte');
+            }
+        });
+
+        // Mise à jour du formulaire de connexion pour une vraie connexion API
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username,
+                        password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Stockage du token JWT
+                    localStorage.setItem('authToken', data.token);
+                    
+                    // Mise à jour de l'interface utilisateur après connexion
+                    updateLoginUI(true, data.user);
+                    
+                    connectionModal.style.display = 'none';
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la connexion');
+            }
+        });
+
+        // Fermeture des modals
+        document.querySelectorAll('.modal .close').forEach(closeBtn => {
+            closeBtn.addEventListener('click', function() {
+                this.closest('.modal').style.display = 'none';
+            });
+        });
+
+        // Changement du fond de carte
+        changeTilesBtn.addEventListener('click', () => {
+            currentTileIndex = (currentTileIndex + 1) % tileSources.length;
+            const newTile = tileSources[currentTileIndex];
+            map.getLayers().item(0).setSource(newTile.source);
+            changeTilesBtn.innerHTML = `<i class="fas fa-${newTile.icon} button-icon"></i>`;
+        });
+
+        // Fonctionnalité de géolocalisation
+        geolocationBtn.addEventListener('click', () => {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const coords = ol.proj.fromLonLat([
+                            position.coords.longitude,
+                            position.coords.latitude
+                        ]);
+                        
+                        // Création d'un marqueur pour la position actuelle
+                        const marker = new ol.layer.Vector({
+                            source: new ol.source.Vector({
+                                features: [
+                                    new ol.Feature({
+                                        geometry: new ol.geom.Point(coords)
+                                    })
+                                ]
+                            }),
+                            style: new ol.style.Style({
+                                image: new ol.style.Circle({
+                                    radius: 6,
+                                    fill: new ol.style.Fill({
+                                        color: '#3399CC'
+                                    }),
+                                    stroke: new ol.style.Stroke({
+                                        color: '#fff',
+                                        width: 2
+                                    })
+                                })
+                            })
+                        });
+                        
+                        // Suppression des anciens marqueurs
+                        map.getLayers().forEach(layer => {
+                            if (layer.get('is_marker')) {
+                                map.removeLayer(layer);
+                            }
+                        });
+                        
+                        marker.set('is_marker', true);
+                        map.addLayer(marker);
+                        
+                        // Centrage de la carte sur la position actuelle
+                        map.getView().animate({
+                            center: coords,
+                            zoom: 15
+                        });
+                    },
+                    (error) => {
+                        alert('Erreur de géolocalisation: ' + error.message);
+                    }
+                );
+            } else {
+                alert('La géolocalisation n\'est pas supportée par votre navigateur');
+            }
+        });
+
+        // Recherche d'adresse avec l'API Adresse.data.gouv.fr
+        locationSearch.addEventListener('input', async (e) => {
+            const query = e.target.value.trim();
+            
+            if (query.length < 3) {
+                suggestionsContainer.style.display = 'none';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                currentSuggestions = data;
+                displaySuggestions(currentSuggestions);
+                
+            } catch (error) {
+                console.error('Erreur lors de la recherche:', error);
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+
+        // Affichage des suggestions de recherche
+        function displaySuggestions(suggestions) {
+            if (suggestions.length === 0) {
+                suggestionsContainer.style.display = 'none';
+                return;
+            }
+            
+            suggestionsContainer.innerHTML = '';
+            
+            suggestions.forEach((suggestion) => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.innerHTML = `
+                    <div class="suggestion-address">${suggestion.properties.name}</div>
+                    <div class="suggestion-city">${suggestion.properties.postcode} ${suggestion.properties.city}</div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    selectSuggestion(suggestion);
+                });
+                
+                suggestionsContainer.appendChild(item);
+            });
+            
+            suggestionsContainer.style.display = 'block';
+        }
+
+        // Sélection d'une suggestion de recherche
+        function selectSuggestion(suggestion) {
+            const coordinates = suggestion.geometry.coordinates;
+            const address = `${suggestion.properties.name}, ${suggestion.properties.postcode} ${suggestion.properties.city}`;
+            
+            if (isSelectingStartPoint) {
+                startPoint = coordinates;
+                locationSearch.value = `Départ: ${address}`;
+                isSelectingStartPoint = false;
+                startPointSelector.style.display = 'none';
+                askForEndPoint();
+            } else if (document.body.classList.contains('route-mode')) {
+                endPoint = coordinates;
+                locationSearch.value = `Arrivée: ${address}`;
+                calculateRoute();
+            } else {
+                locationSearch.value = address;
+                
+                // Centrage de la carte sur l'adresse sélectionnée
+                map.getView().animate({
+                    center: ol.proj.fromLonLat(coordinates),
+                    zoom: 15
+                });
+                
+                // Création d'un marqueur pour l'adresse sélectionnée
+                const marker = new ol.layer.Vector({
+                    source: new ol.source.Vector({
+                        features: [
+                            new ol.Feature({
+                                geometry: new ol.geom.Point(ol.proj.fromLonLat(coordinates))
+                            })
+                        ]
+                    }),
+                    style: new ol.style.Style({
+                        image: new ol.style.Circle({
+                            radius: 6,
+                            fill: new ol.style.Fill({
+                                color: '#3399CC'
+                            }),
+                            stroke: new ol.style.Stroke({
+                                color: '#fff',
+                                width: 2
+                            })
+                        })
+                    })
+                });
+                
+                // Suppression des anciens marqueurs
+                map.getLayers().forEach(layer => {
+                    if (layer.get('is_marker')) {
+                        map.removeLayer(layer);
+                    }
+                });
+                
+                marker.set('is_marker', true);
+                map.addLayer(marker);
+            }
+            
+            suggestionsContainer.style.display = 'none';
+            startPointSelector.style.display = 'none';
+        }
+
+        // Fermeture des suggestions lors d'un clic en dehors
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-wrapper')) {
+                suggestionsContainer.style.display = 'none';
+                if (!isSelectingStartPoint) {
+                    startPointSelector.style.display = 'none';
+                }
+            }
+        });
+
+        // Gestion du mode calcul d'itinéraire
+        itineraryBtn.addEventListener('click', () => {
+            // Vérification que l'utilisateur est connecté
+            if (!localStorage.getItem('authToken')) {
+                alert('Veuillez vous connecter pour calculer un itinéraire');
+                connectionModal.style.display = 'block';
+                return;
+            }
+
+            document.body.classList.add('route-mode');
+            startPoint = null;
+            endPoint = null;
+            
+            routeInstruction.classList.add('active');
+            
+            isSelectingStartPoint = true;
+            locationSearch.placeholder = "Sélectionnez le point de départ";
+            locationSearch.value = '';
+            startPointSelector.style.display = 'block';
+            suggestionsContainer.style.display = 'none';
+        });
+
+        // Option: Utilisation de la position actuelle comme départ
+        currentPositionOption.addEventListener('click', () => {
+            getCurrentPosition().then(position => {
+                startPoint = position;
+                locationSearch.value = "Départ: Votre position";
+                startPointSelector.style.display = 'none';
+                isSelectingStartPoint = false;
+                askForEndPoint();
+            }).catch(error => {
+                alert("Erreur de géolocalisation: " + error.message);
+                startPointSelector.style.display = 'none';
+                isSelectingStartPoint = false;
+            });
+        });
+
+        // Option: Recherche d'une adresse comme départ
+        searchAddressOption.addEventListener('click', () => {
+            locationSearch.placeholder = "Recherchez l'adresse de départ...";
+            locationSearch.value = '';
+            locationSearch.focus();
+            suggestionsContainer.style.display = 'none';
+            startPointSelector.style.display = 'none';
+        });
+
+        // Demande du point d'arrivée après avoir sélectionné le départ
+        function askForEndPoint() {
+            locationSearch.placeholder = "Recherchez l'adresse d'arrivée...";
+            locationSearch.value = '';
+            locationSearch.focus();
+        }
+
+        // Récupération de la position actuelle
+        function getCurrentPosition() {
+            return new Promise((resolve, reject) => {
+                if ('geolocation' in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            const coords = [position.coords.longitude, position.coords.latitude];
+                            resolve(coords);
+                        },
+                        error => {
+                            reject(error);
+                        }
+                    );
+                } else {
+                    reject(new Error('La géolocalisation n\'est pas supportée'));
+                }
+            });
+        }
+
+        // Calcul d'itinéraire avec l'API OpenRouteService
+        async function calculateRoute() {
+            if (!startPoint || !endPoint) return;
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    throw new Error('Vous devez être connecté pour calculer un itinéraire');
+                }
+
+                const url = `/api/route?start=${startPoint[0]},${startPoint[1]}&end=${endPoint[0]},${endPoint[1]}&mode=${currentRouteMode}`;
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Erreur lors du calcul de l\'itinéraire');
+                }
+                
+                const data = await response.json();
+                
+                if (data.features && data.features.length > 0 && data.features[0].properties.segments) {
+                    displayRoute(data.features[0]);
+                } else {
+                    throw new Error('Aucun itinéraire trouvé entre ces points');
+                }
+            } catch (error) {
+                console.error('Erreur lors du calcul de l\'itinéraire:', error);
+                
+                // Affichage d'un message d'erreur convivial
+                if (error.message.includes('connecté')) {
+                    alert(error.message);
+                    connectionModal.style.display = 'block';
+                } else {
+                    alert('Impossible de calculer l\'itinéraire: ' + error.message);
+                }
+                
+                // Réinitialisation du mode itinéraire
+                document.body.classList.remove('route-mode');
+                routeInstruction.classList.remove('active');
+            }
+        }
+
+        // Affichage de l'itinéraire sur la carte
+        function displayRoute(routeFeature) {
+            if (routeLayer) {
+                map.removeLayer(routeLayer);
+            }
+            
+            // Vérification de la validité de la géométrie
+            if (!routeFeature.geometry || !routeFeature.geometry.coordinates || routeFeature.geometry.coordinates.length < 2) {
+                throw new Error('La route n\'a pas de géométrie valide');
+            }
+            
+            // Création de la couche pour l'itinéraire
+            routeLayer = new ol.layer.Vector({
+                source: new ol.source.Vector({
+                    features: [new ol.Feature({
+                        geometry: new ol.geom.LineString(
+                            routeFeature.geometry.coordinates.map(coord => ol.proj.fromLonLat(coord))
+                    })]
+                }),
+                style: new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: '#4a6ea9',
+                        width: 4
+                    })
+                })
+            });
+            
+            map.addLayer(routeLayer);
+            
+            // Affichage des instructions si disponibles
+            if (routeFeature.properties) {
+                displayRouteInstructions(routeFeature.properties);
+            }
+            
+            // Ajustement de la vue pour afficher tout l'itinéraire
+            const extent = routeLayer.getSource().getExtent();
+            map.getView().fit(extent, { padding: [50, 50, 50, 50] });
+        }
+
+        // Affichage des instructions d'itinéraire
+        function displayRouteInstructions(properties) {
+            const summary = properties.summary;
+            
+            // Formatage de la distance (mètres ou kilomètres)
+            const distance = summary.distance < 1000 
+                ? `${Math.round(summary.distance)} m` 
+                : `${(summary.distance / 1000).toFixed(1)} km`;
+            
+            // Formatage de la durée (minutes ou heures:minutes)
+            let durationText;
+            const totalMinutes = Math.round(summary.duration / 60);
+            if (totalMinutes < 60) {
+                durationText = `${totalMinutes} minutes`;
+            } else {
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                durationText = `${hours}h ${minutes}min`;
+            }
+            
+            document.getElementById('route-summary').innerHTML = `
+                Distance: ${distance}<br>
+                Durée: ${durationText}
+            `;
+            
+            const stepsContainer = document.getElementById('route-steps');
+            stepsContainer.innerHTML = '';
+            
+            if (properties.segments && properties.segments.length > 0) {
+                properties.segments[0].steps.forEach(step => {
+                    const stepElement = document.createElement('div');
+                    stepElement.className = 'route-step';
+                    // Formatage de la distance pour chaque étape
+                    const stepDistance = step.distance < 1000 
+                        ? `${Math.round(step.distance)} m` 
+                        : `${(step.distance / 1000).toFixed(1)} km`;
+                    stepElement.innerHTML = `
+                        <strong>${step.instruction}</strong><br>
+                        ${stepDistance}
+                    `;
+                    stepsContainer.appendChild(stepElement);
+                });
+            }
+            
+            stepsContainer.scrollTop = 0;
+            routeInstruction.classList.add('active');
+        }
+
+        // Changement du mode de transport
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentRouteMode = btn.dataset.mode;
+                
+                if (startPoint && endPoint) {
+                    calculateRoute();
+                }
+            });
+        });
+
+        // Gestion de la rotation de la boussole
+        map.getView().on('change:rotation', () => {
+            const rotation = map.getView().getRotation();
+            if (rotation !== undefined) {
+                compassArrow.style.transform = `rotate(${rotation}rad)`;
+            }
+        });
+
+        // Réinitialisation de la rotation au clic sur la boussole
+        compass.addEventListener('click', () => {
+            map.getView().animate({
+                rotation: 0,
+                duration: 300
+            });
+        });
+
+        // Affichage/masquage du panneau d'instructions
+        routeInstructionBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            routeInstruction.classList.toggle('active');
+        });
+
+        // Fermeture du panneau d'instructions
+        document.querySelector('.route-handle').addEventListener('click', (e) => {
+            routeInstruction.classList.remove('active');
+        });
+
+        // Fermeture du panneau d'instructions lors d'un clic en dehors
+        document.addEventListener('click', (e) => {
+            if (!routeInstruction.contains(e.target) && !routeInstructionBtn.contains(e.target)) {
+                routeInstruction.classList.remove('active');
+            }
+        });
+
+        // Récupération des éléments DOM pour la gestion du profil
+        const profileModal = document.getElementById('profile-modal');
+        const profileForm = document.getElementById('profile-form');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        // Vérification de l'état de connexion
+        function isLoggedIn() {
+            return localStorage.getItem('authToken') !== null;
+        }
+
+        // Mise à jour de l'interface en fonction de l'état de connexion
+        function updateLoginUI(loggedIn, userData = null) {
+            const connectBtn = document.getElementById('connect-btn');
+            const controlButtons = document.querySelectorAll('.control-button');
+            
+            if (loggedIn) {
+                connectBtn.innerHTML = '<i class="fas fa-user-check button-icon"></i>';
+                connectBtn.title = 'Profil';
+                // Changement de couleur des boutons pour indiquer la connexion
+                controlButtons.forEach(btn => {
+                    btn.classList.add('connected');
+                });
+                
+                // Fermeture des modals ouvertes
+                connectionModal.style.display = 'none';
+                signupModal.style.display = 'none';
+                
+                // Message de bienvenue si des données utilisateur sont fournies
+                if (userData) {
+                    alert(`Connexion réussie! Bienvenue, ${userData.username}`);
+                }
+            } else {
+                connectBtn.innerHTML = '<i class="fas fa-user button-icon"></i>';
+                connectBtn.title = 'Connexion';
+                // Retour à la couleur normale des boutons
+                controlButtons.forEach(btn => {
+                    btn.classList.remove('connected');
+                });
+                
+                // Fermeture des modals
+                profileModal.style.display = 'none';
+            }
+        }
+
+        // Vérification de l'état de connexion au chargement de la page
+        document.addEventListener('DOMContentLoaded', () => {
+            if (isLoggedIn()) {
+                fetchUserData();
+            }
+        });
+
+        // Récupération des données utilisateur
+        async function fetchUserData() {
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/user', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateLoginUI(true, data);
+                } else {
+                    localStorage.removeItem('authToken');
+                    updateLoginUI(false);
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        }
+
+        // Modification du comportement du bouton de connexion/profil
+        connectBtn.addEventListener('click', () => {
+            if (isLoggedIn()) {
+                // Masquage des autres modals
+                connectionModal.style.display = 'none';
+                signupModal.style.display = 'none';
+                // Affichage de la modal de profil
+                profileModal.style.display = 'block';
+                // Chargement des données utilisateur dans le formulaire
+                loadProfileData();
+            } else {
+                connectionModal.style.display = 'block';
+            }
+        });
+
+        // Chargement des données utilisateur dans le formulaire de profil
+        async function loadProfileData() {
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/user', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const user = await response.json();
+                    document.getElementById('profile-username').value = user.username;
+                    document.getElementById('profile-email').value = user.email;
+                    document.getElementById('profile-password').value = '';
+                    document.getElementById('profile-confirm-password').value = '';
+                }
+            } catch (error) {
+                console.error('Error loading profile data:', error);
+            }
+        }
+
+        // Soumission du formulaire de profil
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('profile-username').value;
+            const email = document.getElementById('profile-email').value;
+            const password = document.getElementById('profile-password').value;
+            const confirmPassword = document.getElementById('profile-confirm-password').value;
+            
+            if (password && password !== confirmPassword) {
+                alert('Les mots de passe ne correspondent pas');
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/user/update', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        username,
+                        email,
+                        password: password || undefined
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('Profil mis à jour avec succès');
+                    profileModal.style.display = 'none';
+                    
+                    // Mise à jour du token s'il a changé
+                    if (data.token) {
+                        localStorage.setItem('authToken', data.token);
+                    }
+                    
+                    // Mise à jour de l'interface avec le nouveau nom d'utilisateur si changé
+                    updateLoginUI(true, data.user);
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                alert('Erreur lors de la mise à jour du profil');
+            }
+        });
+
+        // Gestion de la déconnexion
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                const token = localStorage.getItem('authToken');
+                await fetch('/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                localStorage.removeItem('authToken');
+                profileModal.style.display = 'none';
+                updateLoginUI(false);
+                alert('Déconnexion réussie');
+            } catch (error) {
+                console.error('Error during logout:', error);
+            }
+        });
+
+        // Fermeture de la modal de profil
+        document.querySelectorAll('.profile-modal .close').forEach(btn => {
+            btn.addEventListener('click', () => {
+                profileModal.style.display = 'none';
+            });
+        });
+
+        // Fermeture de la modal lors d'un clic en dehors
+        window.addEventListener('click', (e) => {
+            if (e.target === profileModal) {
+                profileModal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
