@@ -1,7 +1,7 @@
 # Application SIG – Assistance et FAQ
 
 ## 🔍 Auto-assistance
-- [FAQ](docs/faq.html)
+- [FAQ](https://Cedric15-cantal.github.io/appli_sig_edcA6/faq.html)
 - [Guide utilisateur](docs/guide-utilisateur.html) *(à créer)*
 
 ## 🛠️ Support technique via GitHub Issues
