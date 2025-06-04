@@ -11,7 +11,6 @@ ___
 - `/dev` : Code source de l’application SIG (HTML, CSS, JavaScript, données test).
 - `/.github` : Modèles de tickets (issues) et configuration du support.
 - `README.md` : Présentation du projet.
-- `LICENSE` : Licence d’utilisation.
 
 ## 🚀 Lancer l’application en local
 
