@@ -4,7 +4,7 @@ Ce dépôt contient une application SIG destinée aux utilisateurs de LEG pour l
 Le support de maintenance et d'assistance de cette application est également défini via ce dépôt.
 
 Vous trouverez ici toutes les infos utiles pour suivre le code source et faire intervenir de l'assistance sur cette application.
----
+___
 ## 📁 Arborescence du projet
 
 - `/docs` : Documentation utilisateur (FAQ, guide, installation) publiée via GitHub Pages.
@@ -23,7 +23,7 @@ Ouvrir le fichier `dev/index.html` dans un navigateur moderne (aucune installati
 - Filtres dynamiques
 - Export de données
 - Navigation cartographique intuitive
----
+___
 ## ❓ Assistance
 
 ### 🔍 Auto-assistance
